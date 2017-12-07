@@ -2,8 +2,12 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <stdint.h>
 #include <sys/time.h>
 long g_count = 0;
+
+#define TIME 1000000
+
 
 #ifdef USE_SPINLOCK
 pthread_spinlock_t spinlock;
@@ -24,24 +28,40 @@ void *thread_func(void *arg)
   	 * you implemented for assignment,
   	 * because g_count is shared by other threads.
   	 */
+    #ifdef USE_SPINLOCK
+    pthread_spin_lock(&spinlock);
+
+     #else
+        pthread_mutex_lock(&g_mutex);
+     #endif
 
   for (i = 0; i<count; i++){
     /************Critical Section**************/
     g_count++;
     /******************************************/
   }
+
+    #ifdef USE_SPINLOCK
+    pthread_spin_unlock(&spinlock);
+     #else
+     pthread_mutex_unlock(&g_mutex);
+     #endif
+
+
+
 }
-int main(int argc, char *argv{})
+int main(int argc, char *argv[])
 {
   struct timeval Pstart, Pend;
-  pthread_t *tid
+  pthread_t *tid;
   long i, thread_count, value;
+  uint64_t Pdiff =0;
   int rc;
 
   #ifdef USE_SPINLOCK
   pthread_spin_init(&spinlock, 0);
   #else
-    pthread_mutex_init(&g_mutex,NULL);
+  pthread_mutex_init(&g_mutex,NULL);
   #endif
   /*
 	 * Check that the program has three arguments
@@ -82,27 +102,24 @@ int main(int argc, char *argv{})
 
 
    gettimeofday(&Pstart,NULL);
-   for(i=0; i<thread_count; i++){
-    #ifdef USE_SPINLOCK
-    pthread_spin_lock(&spinlock);
 
-     #else
-        pthread_mutex_lock(&g_mutex);
-     #endif
+   for(i=0; i<thread_count; i++){
      rc = pthread_create(&tid[i], NULL, thread_func, (void*)value);
      if(rc){
        fprintf(stderr, "pthread_create() error\n");
        free(tid);
-       pthread_mutex_destroy(&g_mutex);
+	 #ifdef USE_SPINLOCK
+  	pthread_spin_destroy(&spinlock);
+  	#else
+  	pthread_mutex_destroy(&g_mutex);
+  	#endif
        exit(0);
      }
-    #ifdef USE_SPINLOCK
-    pthread_spin_unlock(&spinlock);
-
-     #else
-     pthread_mutex_unlock(&g_mutex);
-     #endif
+  
    }
+
+
+
 
    /*
 	 * Wait until all the threads you created above are finished.
@@ -112,24 +129,25 @@ int main(int argc, char *argv{})
      if(rc){
        fprintf(stderr, "pthread_join() error\n");
        free(tid);
-       pthread_mutex_destroy(&g_mutex);
+	 #ifdef USE_SPINLOCK
+  	pthread_spin_destroy(&spinlock);
+ 	 #else
+ 	 pthread_mutex_destroy(&g_mutex);
+  	#endif
+ 
        exit(0);
      }
    }
    gettimeofday(&Pend,NULL);
 
-  #ifdef USE_SPINLOCK
-  pthread_spin_destroy(&spinlock);
-   #else
-   pthread_mutex_destroy(&mutex);
-   #endif
+
    /*
 	 * Print the value of g_count.
 	 * It must be (thread_count * value)
 	 */
 	printf("value: %ld\n", g_count);
-  Pdiff = TIME*(Pend.tv_sec-Pstart.tv_sec)+Pend.tv_usec-Pstart.tv_usec;
-  printf("**Process time = %llu.%llu sec\n",(long long unsigned int)Pdiff /1000000, ((long long unsigned int) Pdiff/1000))%1000);
+  	Pdiff = TIME*(Pend.tv_sec-Pstart.tv_sec)+Pend.tv_usec-Pstart.tv_usec;
+  	printf("**Process time = %llu.%llu sec\n",(long long unsigned int)Pdiff /1000000, ((long long unsigned int) Pdiff/1000)%1000);
 
 	free(tid);
 
