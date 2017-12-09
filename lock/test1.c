@@ -51,8 +51,8 @@ pthread_mutex_lock(&g_mutex);
 }
 int main(int argc, char *argv[])
 {
-  //struct timeval Pstart, Pend;
-  struct timespec tstart={0,0}, tend={0,0};
+  struct timeval Pstart, Pend;
+  //struct timespec tstart={0,0}, tend={0,0};
   pthread_t *tid;
   long i, thread_count, value;
   uint64_t Pdiff =0;
@@ -101,8 +101,8 @@ int main(int argc, char *argv[])
 
 
 
-  // gettimeofday(&Pstart,NULL);
-	clock_gettime(CLOCK_MONOTONIC, &tstart);
+   gettimeofday(&Pstart,NULL);
+//	clock_gettime(CLOCK_MONOTONIC, &tstart);
 //	some_long_computation();
 
    for(i=0; i<thread_count; i++){
@@ -140,8 +140,8 @@ int main(int argc, char *argv[])
        exit(0);
      }
    }
-   //gettimeofday(&Pend,NULL);
-	clock_gettime(CLOCK_MONOTONIC, &tend);
+   gettimeofday(&Pend,NULL);
+	//clock_gettime(CLOCK_MONOTONIC, &tend);
 	
 
    /*
@@ -149,9 +149,9 @@ int main(int argc, char *argv[])
 	 * It must be (thread_count * value)
 	 */
 	printf("value: %ld\n", g_count);
-  	//Pdiff = TIME*(Pend.tv_sec-Pstart.tv_sec)+Pend.tv_usec-Pstart.tv_usec;
-  	//printf("**Process time = %llu.%llu sec\n",(long long unsigned int)Pdiff /1000000, ((long long unsigned int) Pdiff/100000)%100000);
-	printf("time : %.5f seconds\n",((double)tend.tv_sec+1.0e-9*tend.tv_nsec)-((double)tstart.tv_sec+1.0e-9*tstart.tv_nsec));
+  	Pdiff = TIME*(Pend.tv_sec-Pstart.tv_sec)+Pend.tv_usec-Pstart.tv_usec;
+  	printf("**Process time = %llu.%llu sec\n",(long long unsigned int)Pdiff /1000000, ((long long unsigned int) Pdiff/1000)%1000);
+	//printf("time : %.5f seconds\n",((double)tend.tv_sec+1.0e-9*tend.tv_nsec)-((double)tstart.tv_sec+1.0e-9*tstart.tv_nsec));
 	free(tid);
 
 
